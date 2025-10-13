@@ -1,3 +1,5 @@
+// api/call-gemini.js
+
 export default async function handler(request, response) {
     if (request.method !== 'POST') {
         return response.status(405).json({ error: 'Method Not Allowed' });
@@ -9,10 +11,12 @@ export default async function handler(request, response) {
     const apiKey = process.env.GOOGLE_AI_API_KEY;
 
     if (!apiKey) {
+        console.error("GOOGLE_AI_API_KEY environment variable not set on Vercel.");
         return response.status(500).json({ error: 'API Key is not configured on the server.' });
     }
 
-    const apiUrl = `https://generativelenlanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    // --- FIX IS ON THIS LINE ---
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     
     const payload = { contents: [prompt] };
     if (isJson) {
