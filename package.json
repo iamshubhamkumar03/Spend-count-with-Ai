@@ -1,1 +1,7 @@
-
+{
+  "name": "spend-count-with-ai",
+  "version": "1.0.0",
+  "description": "A personal expense tracker with AI features built with vanilla HTML, CSS, and JavaScript.",
+  "private": true,
+  "author": "iamshubhamkumar03"
+}
