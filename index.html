@@ -241,7 +241,6 @@
                     <div id="imagePreviewContainer" class="hidden text-center mt-4">
                         <img id="imagePreview" class="max-h-40 mx-auto rounded-lg shadow-md" alt="Receipt Preview"/>
                     </div>
-                    <button id="scanButton" class="hidden mt-4 w-full bg-blue-700 hover:bg-blue-800 text-white btn-primary py-2 px-6">Scan and Add Expenses</button>
                     <div id="scanLoader" class="hidden mx-auto mt-4 loader"></div>
                     <div id="scanResult" class="mt-4"></div>
                     <div id="scanError" class="hidden mt-4 text-red-600 bg-red-100 p-3 rounded-lg text-sm"></div>
@@ -285,7 +284,6 @@
         </div>
     </div>
 
-    <!-- Category Limits Modal -->
     <div id="category-limits-modal" class="hidden fixed inset-0 z-[100] bg-black bg-opacity-60 flex items-center justify-center p-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl max-w-lg w-full card-style">
             <div class="flex justify-between items-center mb-4">
@@ -293,21 +291,19 @@
                 <button id="close-limits-modal-btn" class="text-gray-500 hover:text-gray-800 text-3xl font-bold">&times;</button>
             </div>
             <div id="category-limits-form-container" class="space-y-3 max-h-80 overflow-y-auto no-scrollbar pr-2">
-                <!-- Category limit inputs will be dynamically inserted here -->
-            </div>
+                </div>
             <div class="flex justify-end mt-6">
                 <button id="save-limits-btn" class="bg-purple-700 hover:bg-purple-800 text-white btn-primary py-2 px-6">Save Limits</button>
             </div>
         </div>
     </div>
 
-    <!-- Camera Modal -->
     <div id="camera-modal" class="hidden fixed inset-0 z-[100] bg-black bg-opacity-80 flex items-center justify-center p-4">
         <div class="bg-white p-4 rounded-xl shadow-2xl max-w-2xl w-full card-style relative">
             <video id="camera-feed" class="w-full h-auto rounded-lg" autoplay playsinline></video>
             <div class="flex justify-center mt-4 gap-4">
                  <button id="capture-btn" class="p-4 bg-blue-700 hover:bg-blue-800 text-white rounded-full transition-colors" title="Capture Image">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
                  </button>
             </div>
             <button id="close-camera-modal-btn" class="absolute top-2 right-2 text-white bg-black bg-opacity-50 rounded-full p-1 text-2xl leading-none">&times;</button>
@@ -354,7 +350,6 @@
             const chartCanvas = document.getElementById('expense-chart');
             const chartTitleEl = document.getElementById('chart-title');
             const receiptUploader = document.getElementById('receiptUploader');
-            const scanButton = document.getElementById('scanButton');
             const scanLoader = document.getElementById('scanLoader');
             const scanResult = document.getElementById('scanResult');
             const scanError = document.getElementById('scanError');
@@ -384,8 +379,8 @@
             let currentExpenses = [];
             let currentNotes = [];
             let currentCategoryLimits = {};
-            // IMPORTANT: Replace "YOUR_GOOGLE_AI_API_KEY" with your actual Google AI API key for the AI features to work.
-            const apiKey = " ";
+            // NOTE: The API key is handled securely on the server, not here.
+            
             const CATEGORIES = ['Shopping', 'Bills', 'Restaurant', 'Cafe or Stall', 'Home Groceries', 'Entertainment', 'Transport', 'Hospital', 'Fitness', 'Education', 'Miscellaneous Expenses'];
 
             const categoryIcons = {
@@ -547,6 +542,7 @@
 
             function renderMonthFolders() {
                 monthFoldersList.innerHTML = '';
+                document.getElementById('no-months-msg')?.remove();
                 const allMonths = getAllMonthsWithData();
                 if (allMonths.length === 0) {
                      monthFoldersList.insertAdjacentHTML('afterend', '<p id="no-months-msg" class="text-gray-500 text-center col-span-full">No expenses saved yet. Use the selector above to start.</p>');
@@ -818,7 +814,6 @@
                  if (!file) { showNotification('No image file provided.', 'error'); return; }
                  if (!selectedYearMonth) { showNotification('Please select a month before scanning.', 'error'); return; }
 
-                 scanButton.disabled = true;
                  scanLoader.classList.remove('hidden');
                  scanResult.innerHTML = '';
                  scanError.classList.add('hidden');
@@ -829,12 +824,12 @@
                      const imagePart = await fileToGenerativePart(file);
                      const prompt = {
                          parts: [
-                             { text: `Analyze this receipt or bill. Extract a list of items with their name, amount, and category. The valid categories are: ${CATEGORIES.join(', ')}. Assign the most appropriate category. Also extract the date in YYYY-MM-DD format. If no date is found, use today's date. Return a single JSON object. Example: {"date": "YYYY-MM-DD", "items": [{"name": "string", "amount": number, "category": "string"}]}`},
+                             { text: `Analyze this receipt or bill. Extract a list of items with their name, amount, and category. The valid categories are: ${CATEGORIES.join(', ')}. Assign the most appropriate category. Also extract the date in YYYY-MM-DD format. If no date is found, use today's date, which is ${new Date().toISOString().split('T')[0]}. Return a single, valid JSON object with the structure: {"date": "YYYY-MM-DD", "items": [{"name": "string", "amount": number, "category": "string"}]}`},
                              imagePart
                          ]
                      };
 
-                     const responseText = await callGemini('gemini-2.5-flash-preview-05-20', prompt, true);
+                     const responseText = await callGemini('gemini-1.5-flash-latest', prompt);
                      const data = JSON.parse(responseText);
 
                      if (!data.items || data.items.length === 0) {
@@ -873,7 +868,6 @@
                      scanError.textContent = `Error: ${error.message}`;
                      scanError.classList.remove('hidden');
                  } finally {
-                     scanButton.disabled = false;
                      scanLoader.classList.add('hidden');
                      receiptUploader.value = '';
                  }
@@ -890,26 +884,22 @@
                 });
             }
 
-            async function callGemini(model, prompt, isJson = false) {
-                // This function now calls our own secure API endpoint
+            async function callGemini(model, prompt) {
+                // This function calls our own secure API endpoint on Vercel
                 const response = await fetch('/api/call-gemini', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        model,
-                        prompt,
-                        isJson
-                    }),
+                    body: JSON.stringify({ model, prompt }),
                 });
 
-                if (!response.ok) {
-                    const errorBody = await response.json();
-                    throw new Error(errorBody.error || `API request failed with status ${response.status}`);
-                }
-
                 const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || `API request failed with status ${response.status}`);
+                }
+                
                 return result.text;
             }
             
@@ -1099,17 +1089,9 @@
                 receiptUploader.addEventListener('change', (e) => {
                     const file = e.target.files[0];
                     if (file) {
-                       scanButton.classList.remove('hidden'); // Show the manual scan button
-                       scanReceiptImage(file);
+                        scanReceiptImage(file);
                     }
                 });
-                
-                scanButton.addEventListener('click', () => {
-                    const file = receiptUploader.files[0];
-                    if(file) scanReceiptImage(file);
-                    else showNotification("Please upload a file first.", "error")
-                });
-
 
                 analyzeButton.addEventListener('click', async () => {
                     const paidExpenses = currentExpenses.filter(exp => exp.paid);
@@ -1124,18 +1106,18 @@
                     analyzeError.classList.add('hidden');
 
                     try {
-                        const systemPrompt = `You are a cool, modern financial advisor for a user in India (currency is INR). Analyze the user's financial data for the month, which includes their paid expenses, their personal spending limits for different categories, and their own notes. Your goal is to provide a detailed, holistic, and actionable analysis.
-                        1.  **Review Expenses:** Look for repetitive, non-essential spending in categories like 'Restaurant', 'Cafe or Stall', 'Shopping', 'Entertainment'.
-                        2.  **Check Limits:** Compare the spending in each category against the user's set 'categoryLimits'. Explicitly point out which categories are over budget.
-                        3.  **Read Notes:** Review the user's 'notes' to understand their goals or concerns. Connect your advice back to these notes if possible (e.g., "I see you noted you want to save for a trip, but your spending on 'Restaurant' is over your limit...").
-                        4.  **Synthesize:** Combine all this information into a single, cohesive analysis. Address the user directly in a friendly, encouraging tone. Provide specific, actionable tips. Format your response with clear headings (like **Spending Habits**, **Budget Check**, **Final Advice**) using markdown.`;
+                        const systemPrompt = `You are a helpful and friendly financial advisor for a user in India (currency is INR). Analyze the user's monthly financial data. Your goal is to provide a detailed, holistic, and actionable analysis.
+                        1.  **Review Expenses:** Look for patterns or high spending in non-essential categories like 'Restaurant', 'Cafe or Stall', 'Shopping', 'Entertainment'.
+                        2.  **Check Limits:** Compare spending against the user's set 'categoryLimits'. Explicitly point out categories that are over budget.
+                        3.  **Read Notes:** Review the user's 'notes' to understand their goals. Connect your advice to these notes (e.g., "I see you're saving for a trip, let's look at how your spending on 'Restaurant' impacts that goal...").
+                        4.  **Synthesize:** Combine everything into a cohesive analysis. Address the user directly. Provide specific, actionable tips. Format your response with clear headings (e.g., **Spending Habits**, **Budget Check**, **Final Advice**) using markdown for bolding.`;
                         
                         const prompt = { parts: [{ text: `${systemPrompt}\n\nHere is the user's data:\n
                         **Paid Expenses:**\n${JSON.stringify(paidExpenses, null, 2)}\n\n
                         **Category Limits:**\n${JSON.stringify(currentCategoryLimits, null, 2)}\n\n
                         **User Notes:**\n${JSON.stringify(currentNotes, null, 2)}` 
                         }] };
-                        let responseText = await callGemini('gemini-2.5-flash-preview-05-20', prompt);
+                        let responseText = await callGemini('gemini-pro', prompt);
                         
                         // Simple markdown to HTML
                         responseText = responseText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-amber-900">$1</strong>'); // Bold
@@ -1152,7 +1134,7 @@
                     }
                 });
 
-                // Camera Event Listeners
+                // Camera Event Listeners with Improved Error Handling
                 openCameraButton.addEventListener('click', async () => {
                     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                         showNotification('Camera access is not supported by your browser.', 'error');
@@ -1165,7 +1147,13 @@
                         cameraModal.classList.remove('hidden');
                     } catch (error) {
                         console.error("Error accessing camera:", error);
-                        showNotification('Could not access camera. Please check permissions.', 'error');
+                        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                            showNotification('Camera permission was denied. Please enable it in browser settings.', 'error');
+                        } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                            showNotification('No camera was found on this device.', 'error');
+                        } else {
+                            showNotification('Could not access the camera.', 'error');
+                        }
                     }
                 });
 
@@ -1182,8 +1170,7 @@
                     
                     stopCameraStream();
                     cameraModal.classList.add('hidden');
-                    scanButton.classList.add('hidden'); // Hide manual scan button for camera captures
-
+                    
                     captureCanvas.toBlob(blob => {
                         if (blob) {
                             const file = new File([blob], "receipt-capture.jpg", { type: 'image/jpeg' });
@@ -1202,4 +1189,3 @@
     </script>
 </body>
 </html>
-
