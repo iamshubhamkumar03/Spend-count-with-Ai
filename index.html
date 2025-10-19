@@ -11,10 +11,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Times+New+Roman&display=swap" rel="stylesheet">
     
+    <!-- FIREBASE SDK SCRIPTS -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+
     <style>
         html, body {
             height: 100%;
             width: 100%;
+            overflow-x: hidden;
         }
         body {
             font-family: 'Inter', sans-serif;
@@ -82,6 +87,9 @@
         #category-limits-modal.hidden, #camera-modal.hidden {
             display: none;
         }
+        #logout-dropdown {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -104,27 +112,39 @@
                 <h1 class="text-4xl md:text-5xl tracking-wider">SpendCount</h1>
                 <p class="text-lg text-amber-800/90 subtitle italic font-semibold mt-1">Don't just pay, Track It.</p>
             </div>
-            <p class="text-lg text-gray-600 max-w-md mx-auto subtitle font-medium">Take control of your finances. All your data is saved securely and privately on this device.</p>
-            <button id="start-tracking-btn" class="bg-amber-800 hover:bg-amber-900 text-white btn-primary w-full">
-                Start Tracking My Expenses
+            <p class="text-lg text-gray-600 max-w-md mx-auto subtitle font-medium">Take control of your finances.</p>
+            <button id="google-signin-btn" class="bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 btn-primary w-full flex items-center justify-center gap-3">
+                <svg class="w-5 h-5" viewBox="0 0 48 48" width="48px" height="48px"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C44.438,36.333,48,30.636,48,24c0-3.885-0.58-7.594-1.589-10.966L43.611,20.083z"></path></svg>
+                Sign in with Google
             </button>
         </div>
     </div>
-
-    <div id="months-screen" class="hidden max-w-4xl mx-auto p-4 md:p-8">
-        <header class="text-center mb-8">
-            <h1 class="text-4xl tracking-wider">My Expense Months</h1>
-            <p class="text-lg text-gray-600 mt-2 subtitle">Select a folder or jump to any month to add expenses.</p>
-            <form id="jump-to-month-form" class="mt-6 max-w-sm mx-auto flex items-center gap-2">
-                <input type="month" class="input-style" required>
-                <button type="submit" class="bg-amber-800 hover:bg-amber-900 text-white btn-primary py-2 px-6 flex-shrink-0">Go</button>
-            </form>
-        </header>
-        <div id="month-folders-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+    
+    <div id="user-profile" class="hidden fixed top-4 right-4 z-40">
+        <div class="relative">
+            <button id="user-avatar-btn" class="block">
+                <img id="user-avatar" class="w-10 h-10 rounded-full border-2 border-amber-700 shadow-lg" src="" alt="User Avatar">
+            </button>
+            <div id="logout-dropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-xl py-1 transform scale-95 opacity-0 pointer-events-none">
+                <div class="px-4 py-2 text-sm text-gray-700 border-b" id="user-name-dropdown"></div>
+                <a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Logout</a>
             </div>
+        </div>
     </div>
 
-    <div id="app-screen" class="hidden max-w-7xl mx-auto p-4 md:p-8">
+    <div id="months-screen" class="hidden max-w-4xl mx-auto p-4 md:p-8 pt-20">
+        <header class="text-center mb-8">
+             <h1 class="text-4xl tracking-wider">My Expense Months</h1>
+             <p class="text-lg text-gray-600 mt-2 subtitle">Select a folder or jump to any month to add expenses.</p>
+             <form id="jump-to-month-form" class="mt-6 max-w-sm mx-auto flex items-center gap-2">
+                 <input type="month" class="input-style" required>
+                 <button type="submit" class="bg-amber-800 hover:bg-amber-900 text-white btn-primary py-2 px-6 flex-shrink-0">Go</button>
+             </form>
+         </header>
+         <div id="month-folders-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"></div>
+    </div>
+
+    <div id="app-screen" class="hidden max-w-7xl mx-auto p-4 md:p-8 pt-20">
         <header class="flex flex-wrap justify-between items-center gap-4 mb-8">
             <div class="flex items-center gap-3">
                 <div class="w-12 h-12 bg-amber-800 rounded-full flex items-center justify-center">
@@ -213,7 +233,6 @@
              </form>
         </div>
         
-
         <div class="card-style rounded-xl p-6 mb-8">
              <div class="flex items-center gap-3 mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-800"><path d="m12 8 2 5 5 2-5 2-2 5-2-5-5-2 5-2 2-5z"/><path d="M20 3h-2"/><path d="M22 5v-2"/><path d="m2.5 15.5 1.5 1.5"/><path d="M20 21h2"/><path d="M22 19v2"/><path d="m15.5 2.5 1.5-1.5"/><path d="m4 3h2"/><path d="M2 5V3"/><path d="M4 21H2"/><path d="M2 19v-2"/></svg>
@@ -291,7 +310,7 @@
                 <button id="close-limits-modal-btn" class="text-gray-500 hover:text-gray-800 text-3xl font-bold">&times;</button>
             </div>
             <div id="category-limits-form-container" class="space-y-3 max-h-80 overflow-y-auto no-scrollbar pr-2">
-                </div>
+            </div>
             <div class="flex justify-end mt-6">
                 <button id="save-limits-btn" class="bg-purple-700 hover:bg-purple-800 text-white btn-primary py-2 px-6">Save Limits</button>
             </div>
@@ -312,16 +331,39 @@
     <canvas id="capture-canvas" class="hidden"></canvas>
 
     <script>
+        // --- FIREBASE INITIALIZATION ---
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyBhoeYur0QHVp1mCPGFuIPxPatva4CNvNA",
+          authDomain: "spendcount-ai.firebaseapp.com",
+          projectId: "spendcount-ai",
+          storageBucket: "spendcount-ai.appspot.com",
+          messagingSenderId: "446502600721",
+          appId: "1:446502600721:web:59a398bfb7e1c9f74571b0",
+          measurementId: "G-PYDK931576"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const googleProvider = new firebase.auth.GoogleAuthProvider();
+
         (function() {
             // --- DOM Elements ---
-            const notificationContainer = document.getElementById('notification-container');
             const loadingSpinner = document.getElementById('loading-spinner');
             const loginScreen = document.getElementById('login-screen');
-            const startTrackingBtn = document.getElementById('start-tracking-btn');
+            const googleSigninBtn = document.getElementById('google-signin-btn');
             const monthsScreen = document.getElementById('months-screen');
+            const appScreen = document.getElementById('app-screen');
+            const userProfileSection = document.getElementById('user-profile');
+            const userAvatarBtn = document.getElementById('user-avatar-btn');
+            const userAvatar = document.getElementById('user-avatar');
+            const userNameDropdown = document.getElementById('user-name-dropdown');
+            const logoutBtn = document.getElementById('logout-btn');
+            const logoutDropdown = document.getElementById('logout-dropdown');
+            const notificationContainer = document.getElementById('notification-container');
             const monthFoldersList = document.getElementById('month-folders-list');
             const jumpToMonthForm = document.getElementById('jump-to-month-form');
-            const appScreen = document.getElementById('app-screen');
             const backToMonthsBtn = document.getElementById('back-to-months-btn');
             const monthSelector = document.getElementById('month-selector');
             const totalBudgetEl = document.getElementById('total-budget');
@@ -373,16 +415,15 @@
             const limitExceededList = document.getElementById('limit-exceeded-list');
 
             // --- Global Variables ---
+            let currentUser = null;
             let selectedYearMonth = '';
             let expenseChart = null;
             let currentBudgets = [];
             let currentExpenses = [];
             let currentNotes = [];
             let currentCategoryLimits = {};
-            // NOTE: The API key is handled securely on the server, not here.
-            
-            const CATEGORIES = ['Shopping', 'Bills', 'Restaurant', 'Cafe or Stall', 'Home Groceries', 'Entertainment', 'Transport', 'Hospital', 'Fitness', 'Education', 'Miscellaneous Expenses'];
 
+            const CATEGORIES = ['Shopping', 'Bills', 'Restaurant', 'Cafe or Stall', 'Home Groceries', 'Entertainment', 'Transport', 'Hospital', 'Fitness', 'Education', 'Miscellaneous Expenses'];
             const categoryIcons = {
                 Shopping: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-amber-700"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>`,
                 Bills: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-orange-700"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
@@ -396,8 +437,82 @@
                 Education: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-indigo-700"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`,
                 'Miscellaneous Expenses': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-gray-600"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>`,
             };
+            
+            // --- AUTHENTICATION LOGIC ---
+            googleSigninBtn.addEventListener('click', () => {
+                auth.signInWithPopup(googleProvider)
+                    .catch((error) => {
+                        console.error("Google Sign-In Error:", error);
+                        showNotification('Could not sign in with Google. Please try again.', 'error');
+                    });
+            });
 
-            // --- Utility Functions ---
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                auth.signOut();
+            });
+            
+            userAvatarBtn.addEventListener('click', () => {
+                logoutDropdown.classList.toggle('opacity-0');
+                logoutDropdown.classList.toggle('scale-95');
+                logoutDropdown.classList.toggle('pointer-events-none');
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!userProfileSection.contains(e.target)) {
+                    logoutDropdown.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+                }
+            });
+
+            auth.onAuthStateChanged(user => {
+                setTimeout(() => loadingSpinner.classList.add('opacity-0', 'pointer-events-none'), 500);
+                if (user) {
+                    currentUser = user;
+                    userAvatar.src = user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'User'}&background=a9a29e&color=fff`;
+                    userNameDropdown.textContent = user.displayName || 'Welcome!';
+                    userProfileSection.classList.remove('hidden');
+                    loginScreen.classList.add('hidden');
+                    monthsScreen.classList.remove('hidden');
+                    appScreen.classList.add('hidden');
+                    renderMonthFolders(); 
+                } else {
+                    currentUser = null;
+                    userProfileSection.classList.add('hidden');
+                    loginScreen.classList.remove('hidden');
+                    monthsScreen.classList.add('hidden');
+                    appScreen.classList.add('hidden');
+                }
+            });
+
+            // --- UPDATED LOCALSTORAGE FUNCTIONS ---
+            const getBaseKey = (key, yearMonth) => {
+                if (!currentUser) throw new Error("User not logged in");
+                return `${key}_${currentUser.uid}_${yearMonth}`;
+            }
+
+            const getBudgetsKey = (yearMonth) => getBaseKey('budgets', yearMonth);
+            const getExpensesKey = (yearMonth) => getBaseKey('expenses', yearMonth);
+            const getNotesKey = (yearMonth) => getBaseKey('notes', yearMonth);
+            const getCategoryLimitsKey = (yearMonth) => getBaseKey('categoryLimits', yearMonth);
+            const getOverBudgetAlertKey = (yearMonth) => getBaseKey('overBudgetAlertShown', yearMonth);
+            
+            const loadData = (key, defaultValue) => {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : defaultValue;
+            };
+            const saveData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
+            
+            const loadBudgets = (yearMonth) => loadData(getBudgetsKey(yearMonth), []);
+            const saveBudgets = (yearMonth, budgets) => saveData(getBudgetsKey(yearMonth), budgets);
+            const loadExpenses = (yearMonth) => loadData(getExpensesKey(yearMonth), []);
+            const saveExpenses = (yearMonth, expenses) => saveData(getExpensesKey(yearMonth), expenses);
+            const loadNotes = (yearMonth) => loadData(getNotesKey(yearMonth), []);
+            const saveNotes = (yearMonth, notes) => saveData(getNotesKey(yearMonth), notes);
+            const loadCategoryLimits = (yearMonth) => loadData(getCategoryLimitsKey(yearMonth), {});
+            const saveCategoryLimits = (yearMonth, limits) => saveData(getCategoryLimitsKey(yearMonth), limits);
+
+            // --- ALL YOUR ORIGINAL JAVASCRIPT FUNCTIONS AND EVENT LISTENERS ---
+            
             function showNotification(message, type = 'info') {
                 const notification = document.createElement('div');
                 let bgColor = 'bg-blue-500';
@@ -484,12 +599,10 @@
             }
             
             function populateTimeDropdowns() {
-                // Hours (1-12)
                 expenseHourInput.innerHTML = '';
                 for (let i = 1; i <= 12; i++) {
                     expenseHourInput.insertAdjacentHTML('beforeend', `<option value="${i}">${i}</option>`);
                 }
-                // Minutes (00-59)
                 expenseMinuteInput.innerHTML = '';
                 for (let i = 0; i < 60; i++) {
                     const minute = i.toString().padStart(2, '0');
@@ -497,47 +610,11 @@
                 }
             }
 
-
             function populateCategoryDropdown() {
                 expenseCategorySelect.innerHTML = '';
                 CATEGORIES.forEach(cat => {
                     expenseCategorySelect.insertAdjacentHTML('beforeend', `<option value="${cat}">${cat}</option>`);
                 });
-            }
-
-            // --- LocalStorage Functions ---
-            const getBudgetsKey = (yearMonth) => `budgets_${yearMonth}`;
-            const getExpensesKey = (yearMonth) => `expenses_${yearMonth}`;
-            const getNotesKey = (yearMonth) => `notes_${yearMonth}`;
-            const getCategoryLimitsKey = (yearMonth) => `categoryLimits_${yearMonth}`;
-            const getOverBudgetAlertKey = (yearMonth) => `overBudgetAlertShown_${yearMonth}`;
-
-            const loadData = (key, defaultValue) => {
-                const data = localStorage.getItem(key);
-                return data ? JSON.parse(data) : defaultValue;
-            };
-            const saveData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
-            
-            const loadBudgets = (yearMonth) => loadData(getBudgetsKey(yearMonth), []);
-            const saveBudgets = (yearMonth, budgets) => saveData(getBudgetsKey(yearMonth), budgets);
-            const loadExpenses = (yearMonth) => loadData(getExpensesKey(yearMonth), []);
-            const saveExpenses = (yearMonth, expenses) => saveData(getExpensesKey(yearMonth), expenses);
-            const loadNotes = (yearMonth) => loadData(getNotesKey(yearMonth), []);
-            const saveNotes = (yearMonth, notes) => saveData(getNotesKey(yearMonth), notes);
-            const loadCategoryLimits = (yearMonth) => loadData(getCategoryLimitsKey(yearMonth), {});
-            const saveCategoryLimits = (yearMonth, limits) => saveData(getCategoryLimitsKey(yearMonth), limits);
-            
-            // --- Month Folder Functions ---
-            function getAllMonthsWithData() {
-                const months = new Set();
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key.startsWith('expenses_') || key.startsWith('budgets_')) {
-                        const yearMonth = key.split('_')[1];
-                        if (yearMonth) months.add(yearMonth);
-                    }
-                }
-                return Array.from(months).sort().reverse();
             }
 
             function renderMonthFolders() {
@@ -583,7 +660,6 @@
                 });
             }
 
-            // --- Chart Functions ---
             function initializeChart() {
                 if (expenseChart) expenseChart.destroy();
                 const ctx = chartCanvas.getContext('2d');
@@ -629,7 +705,6 @@
                 expenseChart.update();
             }
 
-            // --- UI Update Functions ---
             function updateAllDisplays() {
                 updateSummaryDisplay();
                 updateBudgetList();
@@ -663,7 +738,6 @@
                     limitExceededList.innerHTML = '<p class="text-sm text-green-600 text-center py-2">All categories are within budget!</p>';
                 }
             }
-
 
             function updateSummaryDisplay() {
                 const totalFunds = currentBudgets.reduce((sum, budget) => sum + budget.amount, 0);
@@ -762,7 +836,6 @@
                     </div>`).join('');
             }
 
-            // --- Data Functions ---
             function loadMonthData(yearMonth) {
                 currentBudgets = loadBudgets(yearMonth);
                 currentExpenses = loadExpenses(yearMonth);
@@ -873,8 +946,6 @@
                  }
             }
 
-
-            // --- AI & Modal Functions ---
             function fileToGenerativePart(file) {
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
@@ -885,7 +956,6 @@
             }
 
             async function callGemini(model, prompt) {
-                // This function calls our own secure API endpoint on Vercel
                 const response = await fetch('/api/call-gemini', {
                     method: 'POST',
                     headers: {
@@ -919,273 +989,262 @@
                 categoryLimitsModal.classList.remove('hidden');
             }
 
-            // --- Camera Functions ---
             function stopCameraStream() {
                 if (cameraFeed.srcObject) {
                     cameraFeed.srcObject.getTracks().forEach(track => track.stop());
                     cameraFeed.srcObject = null;
                 }
             }
-
-
-            // --- Event Listeners and Initialization ---
+            
             document.addEventListener('DOMContentLoaded', function() {
                 populateTimeDropdowns();
                 populateCategoryDropdown();
-                setTimeout(() => loadingSpinner.classList.add('opacity-0', 'pointer-events-none'), 500);
-
-                startTrackingBtn.addEventListener('click', () => {
-                    loginScreen.classList.add('hidden');
-                    monthsScreen.classList.remove('hidden');
-                    renderMonthFolders();
-                });
-                
-                monthFoldersList.addEventListener('click', (e) => {
-                    const folderCard = e.target.closest('.month-folder');
-                    if (!folderCard) return;
-                    const yearMonth = folderCard.dataset.yearMonth;
-                    if (e.target.closest('.delete-month-btn')) {
-                        deleteMonthData(yearMonth);
-                    } else {
-                        selectedYearMonth = yearMonth;
-                        monthSelector.value = yearMonth;
-                        monthsScreen.classList.add('hidden');
-                        appScreen.classList.remove('hidden');
-                        if (!expenseChart) initializeChart();
-                        loadMonthData(yearMonth);
-                    }
-                });
-
-                jumpToMonthForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    const yearMonth = this.querySelector('input[type="month"]').value;
-                    if (yearMonth) {
-                        selectedYearMonth = yearMonth;
-                        monthSelector.value = yearMonth;
-                        monthsScreen.classList.add('hidden');
-                        appScreen.classList.remove('hidden');
-                        if (!expenseChart) initializeChart();
-                        loadMonthData(yearMonth);
-                    }
-                });
-
-                backToMonthsBtn.addEventListener('click', () => {
-                    appScreen.classList.add('hidden');
-                    monthsScreen.classList.remove('hidden');
-                    renderMonthFolders();
-                });
-                
-                monthSelector.addEventListener('change', function() {
-                    selectedYearMonth = this.value;
-                    loadMonthData(selectedYearMonth);
-                });
-                
-                budgetForm.addEventListener('submit', e => {
-                    e.preventDefault();
-                    const name = budgetNameInput.value.trim();
-                    const amount = parseFloat(budgetAmountInput.value);
-                    const type = budgetTypeSelect.value;
-
-                    if (!name || isNaN(amount) || amount <= 0) {
-                        showNotification('Please enter a valid name and positive amount.', 'error');
-                        return;
-                    }
-                    
-                    const newBudgetEntry = { id: crypto.randomUUID(), name, amount, type };
-                    currentBudgets.push(newBudgetEntry);
-                    saveBudgets(selectedYearMonth, currentBudgets);
-                    showNotification('Budget entry added!', 'success');
-                    
-                    updateAllDisplays();
-                    budgetForm.reset();
-                });
-
-                expenseForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    const dateValue = expenseDateInput.value;
-                    let hourValue = parseInt(expenseHourInput.value);
-                    const minuteValue = expenseMinuteInput.value;
-                    const ampmValue = expenseAmpmInput.value;
-                    const name = expenseNameInput.value.trim();
-                    const amount = parseFloat(expenseAmountInput.value);
-                    const category = expenseCategorySelect.value;
-                    
-                    if (!name || isNaN(amount) || amount <= 0 || !dateValue) {
-                        showNotification('Please fill all expense fields correctly.', 'error');
-                        return;
-                    }
-                    
-                    // Convert 12-hour format to 24-hour for saving
-                    if (ampmValue === 'PM' && hourValue !== 12) {
-                        hourValue += 12;
-                    }
-                    if (ampmValue === 'AM' && hourValue === 12) { // Midnight case
-                        hourValue = 0;
-                    }
-                    const formattedHour = hourValue.toString().padStart(2, '0');
-                    const combinedDateTime = `${dateValue}T${formattedHour}:${minuteValue}`;
-
-                    const categoryLimit = currentCategoryLimits[category];
-                    const spentSoFar = currentExpenses.filter(exp => exp.paid && exp.category === category).reduce((sum, exp) => sum + exp.amount, 0);
-                    if (categoryLimit && (spentSoFar + amount > categoryLimit)) {
-                        showNotification(`Warning: This expense will exceed your limit for ${category}!`, 'warning');
-                    }
-                    
-                    const expense = {
-                        id: crypto.randomUUID(), name, amount, category,
-                        dueDate: combinedDateTime,
-                        paid: false, createdAt: new Date().toISOString()
-                    };
-                    const expenseYearMonth = expense.dueDate.slice(0, 7);
-                    
-                    if (expenseYearMonth === selectedYearMonth) {
-                        currentExpenses.push(expense);
-                        saveExpenses(selectedYearMonth, currentExpenses);
-                        updateAllDisplays();
-                        showNotification(`Expense "${expense.name}" saved!`, 'success');
-                    } else {
-                        let otherMonthExpenses = loadExpenses(expenseYearMonth);
-                        otherMonthExpenses.push(expense);
-                        saveExpenses(expenseYearMonth, otherMonthExpenses);
-                        const monthName = new Date(expenseYearMonth + '-02').toLocaleString('default', { month: 'long', year: 'numeric' });
-                        
-                        showSwitchMonthModal(`Expense "${expense.name}" was saved to ${monthName}. Do you want to switch to that month now?`, () => {
-                             selectedYearMonth = expenseYearMonth;
-                             monthSelector.value = expenseYearMonth;
-                             loadMonthData(expenseYearMonth);
-                        });
-                    }
-                    expenseForm.reset();
-                });
-
-                notesForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    const noteText = noteInput.value.trim();
-                    if (noteText) {
-                        currentNotes.unshift({ id: crypto.randomUUID(), text: noteText, createdAt: new Date().toISOString() });
-                        saveNotes(selectedYearMonth, currentNotes);
-                        updateNotesList();
-                        noteInput.value = '';
-                        showNotification('Note added!', 'success');
-                    } else showNotification('Note cannot be empty.', 'error');
-                });
-
-                setCategoryLimitsBtn.addEventListener('click', openCategoryLimitsModal);
-                closeLimitsModalBtn.addEventListener('click', () => categoryLimitsModal.classList.add('hidden'));
-                saveLimitsBtn.addEventListener('click', () => {
-                    const newLimits = {};
-                    categoryLimitsFormContainer.querySelectorAll('input').forEach(input => {
-                        const cat = input.dataset.category;
-                        const val = parseFloat(input.value);
-                        if (!isNaN(val) && val > 0) newLimits[cat] = val;
-                    });
-                    currentCategoryLimits = newLimits;
-                    saveCategoryLimits(selectedYearMonth, currentCategoryLimits);
-                    categoryLimitsModal.classList.add('hidden');
-                    showNotification('Category limits saved!', 'success');
-                    updateLimitExceededDisplay();
-                });
-
-                receiptUploader.addEventListener('change', (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        scanReceiptImage(file);
-                    }
-                });
-
-                analyzeButton.addEventListener('click', async () => {
-                    const paidExpenses = currentExpenses.filter(exp => exp.paid);
-                    if (paidExpenses.length === 0) {
-                        showNotification('You have no paid expenses to analyze.', 'warning');
-                        return;
-                    }
-                    
-                    analyzeButton.disabled = true;
-                    analyzeLoader.classList.remove('hidden');
-                    analysisResult.classList.add('hidden');
-                    analyzeError.classList.add('hidden');
-
-                    try {
-                        const systemPrompt = `You are a helpful and friendly financial advisor for a user in India (currency is INR). Analyze the user's monthly financial data. Your goal is to provide a detailed, holistic, and actionable analysis.
-                        1.  **Review Expenses:** Look for patterns or high spending in non-essential categories like 'Restaurant', 'Cafe or Stall', 'Shopping', 'Entertainment'.
-                        2.  **Check Limits:** Compare spending against the user's set 'categoryLimits'. Explicitly point out categories that are over budget.
-                        3.  **Read Notes:** Review the user's 'notes' to understand their goals. Connect your advice to these notes (e.g., "I see you're saving for a trip, let's look at how your spending on 'Restaurant' impacts that goal...").
-                        4.  **Synthesize:** Combine everything into a cohesive analysis. Address the user directly. Provide specific, actionable tips. Format your response with clear headings (e.g., **Spending Habits**, **Budget Check**, **Final Advice**) using markdown for bolding.`;
-                        
-                        const prompt = { parts: [{ text: `${systemPrompt}\n\nHere is the user's data:\n
-                        **Paid Expenses:**\n${JSON.stringify(paidExpenses, null, 2)}\n\n
-                        **Category Limits:**\n${JSON.stringify(currentCategoryLimits, null, 2)}\n\n
-                        **User Notes:**\n${JSON.stringify(currentNotes, null, 2)}` 
-                        }] };
-                        let responseText = await callGemini('gemini-pro', prompt);
-                        
-                        // Simple markdown to HTML
-                        responseText = responseText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-amber-900">$1</strong>'); // Bold
-                        responseText = responseText.replace(/\n/g, '<br>');
-
-                        analysisResult.innerHTML = `<div class="flex items-center gap-2 mb-3"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-800"><path d="M12 2a10 10 0 1 0 10 10c0-2-1-4-3-5.5s-4.5-3-5.5-3Z"/><path d="m14 12-2 2-2-2"/></svg><p class="font-bold text-lg text-amber-900">AI Financial Insights</p></div><p class="text-gray-700">${responseText}</p>`;
-                        analysisResult.classList.remove('hidden');
-                    } catch (error) {
-                        analyzeError.textContent = `Error: ${error.message}`;
-                        analyzeError.classList.remove('hidden');
-                    } finally {
-                        analyzeButton.disabled = false;
-                        analyzeLoader.classList.add('hidden');
-                    }
-                });
-
-                // Camera Event Listeners with Improved Error Handling
-                openCameraButton.addEventListener('click', async () => {
-                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                        showNotification('Camera access is not supported by your browser.', 'error');
-                        return;
-                    }
-
-                    try {
-                        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                        cameraFeed.srcObject = stream;
-                        cameraModal.classList.remove('hidden');
-                    } catch (error) {
-                        console.error("Error accessing camera:", error);
-                        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-                            showNotification('Camera permission was denied. Please enable it in browser settings.', 'error');
-                        } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-                            showNotification('No camera was found on this device.', 'error');
-                        } else {
-                            showNotification('Could not access the camera.', 'error');
-                        }
-                    }
-                });
-
-                closeCameraModalBtn.addEventListener('click', () => {
-                    stopCameraStream();
-                    cameraModal.classList.add('hidden');
-                });
-
-                captureBtn.addEventListener('click', () => {
-                    const context = captureCanvas.getContext('2d');
-                    captureCanvas.width = cameraFeed.videoWidth;
-                    captureCanvas.height = cameraFeed.videoHeight;
-                    context.drawImage(cameraFeed, 0, 0, cameraFeed.videoWidth, cameraFeed.videoHeight);
-                    
-                    stopCameraStream();
-                    cameraModal.classList.add('hidden');
-                    
-                    captureCanvas.toBlob(blob => {
-                        if (blob) {
-                            const file = new File([blob], "receipt-capture.jpg", { type: 'image/jpeg' });
-                            scanReceiptImage(file); // Automatically scan after capture
-                        }
-                    }, 'image/jpeg');
-                });
+                // We let the auth state change handle the initial view
             });
 
-            // Expose functions to global scope
+            monthFoldersList.addEventListener('click', (e) => {
+                const folderCard = e.target.closest('.month-folder');
+                if (!folderCard) return;
+                const yearMonth = folderCard.dataset.yearMonth;
+                if (e.target.closest('.delete-month-btn')) {
+                    deleteMonthData(yearMonth);
+                } else {
+                    selectedYearMonth = yearMonth;
+                    monthSelector.value = yearMonth;
+                    monthsScreen.classList.add('hidden');
+                    appScreen.classList.remove('hidden');
+                    if (!expenseChart) initializeChart();
+                    loadMonthData(yearMonth);
+                }
+            });
+
+            jumpToMonthForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const yearMonth = this.querySelector('input[type="month"]').value;
+                if (yearMonth) {
+                    selectedYearMonth = yearMonth;
+                    monthSelector.value = yearMonth;
+                    monthsScreen.classList.add('hidden');
+                    appScreen.classList.remove('hidden');
+                    if (!expenseChart) initializeChart();
+                    loadMonthData(yearMonth);
+                }
+            });
+
+            backToMonthsBtn.addEventListener('click', () => {
+                appScreen.classList.add('hidden');
+                monthsScreen.classList.remove('hidden');
+                renderMonthFolders();
+            });
+            
+            monthSelector.addEventListener('change', function() {
+                selectedYearMonth = this.value;
+                loadMonthData(selectedYearMonth);
+            });
+            
+            budgetForm.addEventListener('submit', e => {
+                e.preventDefault();
+                const name = budgetNameInput.value.trim();
+                const amount = parseFloat(budgetAmountInput.value);
+                const type = budgetTypeSelect.value;
+
+                if (!name || isNaN(amount) || amount <= 0) {
+                    showNotification('Please enter a valid name and positive amount.', 'error');
+                    return;
+                }
+                
+                const newBudgetEntry = { id: crypto.randomUUID(), name, amount, type };
+                currentBudgets.push(newBudgetEntry);
+                saveBudgets(selectedYearMonth, currentBudgets);
+                showNotification('Budget entry added!', 'success');
+                
+                updateAllDisplays();
+                budgetForm.reset();
+            });
+
+            expenseForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const dateValue = expenseDateInput.value;
+                let hourValue = parseInt(expenseHourInput.value);
+                const minuteValue = expenseMinuteInput.value;
+                const ampmValue = expenseAmpmInput.value;
+                const name = expenseNameInput.value.trim();
+                const amount = parseFloat(expenseAmountInput.value);
+                const category = expenseCategorySelect.value;
+                
+                if (!name || isNaN(amount) || amount <= 0 || !dateValue) {
+                    showNotification('Please fill all expense fields correctly.', 'error');
+                    return;
+                }
+                
+                if (ampmValue === 'PM' && hourValue !== 12) {
+                    hourValue += 12;
+                }
+                if (ampmValue === 'AM' && hourValue === 12) {
+                    hourValue = 0;
+                }
+                const formattedHour = hourValue.toString().padStart(2, '0');
+                const combinedDateTime = `${dateValue}T${formattedHour}:${minuteValue}`;
+
+                const categoryLimit = currentCategoryLimits[category];
+                const spentSoFar = currentExpenses.filter(exp => exp.paid && exp.category === category).reduce((sum, exp) => sum + exp.amount, 0);
+                if (categoryLimit && (spentSoFar + amount > categoryLimit)) {
+                    showNotification(`Warning: This expense will exceed your limit for ${category}!`, 'warning');
+                }
+                
+                const expense = {
+                    id: crypto.randomUUID(), name, amount, category,
+                    dueDate: combinedDateTime,
+                    paid: false, createdAt: new Date().toISOString()
+                };
+                const expenseYearMonth = expense.dueDate.slice(0, 7);
+                
+                if (expenseYearMonth === selectedYearMonth) {
+                    currentExpenses.push(expense);
+                    saveExpenses(selectedYearMonth, currentExpenses);
+                    updateAllDisplays();
+                    showNotification(`Expense "${expense.name}" saved!`, 'success');
+                } else {
+                    let otherMonthExpenses = loadExpenses(expenseYearMonth);
+                    otherMonthExpenses.push(expense);
+                    saveExpenses(expenseYearMonth, otherMonthExpenses);
+                    const monthName = new Date(expenseYearMonth + '-02').toLocaleString('default', { month: 'long', year: 'numeric' });
+                    
+                    showSwitchMonthModal(`Expense "${expense.name}" was saved to ${monthName}. Do you want to switch to that month now?`, () => {
+                         selectedYearMonth = expenseYearMonth;
+                         monthSelector.value = expenseYearMonth;
+                         loadMonthData(expenseYearMonth);
+                    });
+                }
+                expenseForm.reset();
+            });
+
+            notesForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const noteText = noteInput.value.trim();
+                if (noteText) {
+                    currentNotes.unshift({ id: crypto.randomUUID(), text: noteText, createdAt: new Date().toISOString() });
+                    saveNotes(selectedYearMonth, currentNotes);
+                    updateNotesList();
+                    noteInput.value = '';
+                    showNotification('Note added!', 'success');
+                } else showNotification('Note cannot be empty.', 'error');
+            });
+
+            setCategoryLimitsBtn.addEventListener('click', openCategoryLimitsModal);
+            closeLimitsModalBtn.addEventListener('click', () => categoryLimitsModal.classList.add('hidden'));
+            saveLimitsBtn.addEventListener('click', () => {
+                const newLimits = {};
+                categoryLimitsFormContainer.querySelectorAll('input').forEach(input => {
+                    const cat = input.dataset.category;
+                    const val = parseFloat(input.value);
+                    if (!isNaN(val) && val > 0) newLimits[cat] = val;
+                });
+                currentCategoryLimits = newLimits;
+                saveCategoryLimits(selectedYearMonth, currentCategoryLimits);
+                categoryLimitsModal.classList.add('hidden');
+                showNotification('Category limits saved!', 'success');
+                updateLimitExceededDisplay();
+            });
+
+            receiptUploader.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    scanReceiptImage(file);
+                }
+            });
+
+            analyzeButton.addEventListener('click', async () => {
+                const paidExpenses = currentExpenses.filter(exp => exp.paid);
+                if (paidExpenses.length === 0) {
+                    showNotification('You have no paid expenses to analyze.', 'warning');
+                    return;
+                }
+                
+                analyzeButton.disabled = true;
+                analyzeLoader.classList.remove('hidden');
+                analysisResult.classList.add('hidden');
+                analyzeError.classList.add('hidden');
+
+                try {
+                    const systemPrompt = `You are a helpful and friendly financial advisor for a user in India (currency is INR). Analyze the user's monthly financial data. Your goal is to provide a detailed, holistic, and actionable analysis.
+                    1.  **Review Expenses:** Look for patterns or high spending in non-essential categories like 'Restaurant', 'Cafe or Stall', 'Shopping', 'Entertainment'.
+                    2.  **Check Limits:** Compare spending against the user's set 'categoryLimits'. Explicitly point out categories that are over budget.
+                    3.  **Read Notes:** Review the user's 'notes' to understand their goals. Connect your advice to these notes (e.g., "I see you're saving for a trip, let's look at how your spending on 'Restaurant' impacts that goal...").
+                    4.  **Synthesize:** Combine everything into a cohesive analysis. Address the user directly. Provide specific, actionable tips. Format your response with clear headings (e.g., **Spending Habits**, **Budget Check**, **Final Advice**) using markdown for bolding.`;
+                    
+                    const prompt = { parts: [{ text: `${systemPrompt}\n\nHere is the user's data:\n
+                    **Paid Expenses:**\n${JSON.stringify(paidExpenses, null, 2)}\n\n
+                    **Category Limits:**\n${JSON.stringify(currentCategoryLimits, null, 2)}\n\n
+                    **User Notes:**\n${JSON.stringify(currentNotes, null, 2)}` 
+                    }] };
+                    let responseText = await callGemini('gemini-pro', prompt);
+                    
+                    responseText = responseText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-amber-900">$1</strong>');
+                    responseText = responseText.replace(/\n/g, '<br>');
+
+                    analysisResult.innerHTML = `<div class="flex items-center gap-2 mb-3"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-800"><path d="M12 2a10 10 0 1 0 10 10c0-2-1-4-3-5.5s-4.5-3-5.5-3Z"/><path d="m14 12-2 2-2-2"/></svg><p class="font-bold text-lg text-amber-900">AI Financial Insights</p></div><p class="text-gray-700">${responseText}</p>`;
+                    analysisResult.classList.remove('hidden');
+                } catch (error) {
+                    analyzeError.textContent = `Error: ${error.message}`;
+                    analyzeError.classList.remove('hidden');
+                } finally {
+                    analyzeButton.disabled = false;
+                    analyzeLoader.classList.add('hidden');
+                }
+            });
+
+            openCameraButton.addEventListener('click', async () => {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    showNotification('Camera access is not supported by your browser.', 'error');
+                    return;
+                }
+
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    cameraFeed.srcObject = stream;
+                    cameraModal.classList.remove('hidden');
+                } catch (error) {
+                    console.error("Error accessing camera:", error);
+                    if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                        showNotification('Camera permission was denied. Please enable it in browser settings.', 'error');
+                    } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                        showNotification('No camera was found on this device.', 'error');
+                    } else {
+                        showNotification('Could not access the camera.', 'error');
+                    }
+                }
+            });
+
+            closeCameraModalBtn.addEventListener('click', () => {
+                stopCameraStream();
+                cameraModal.classList.add('hidden');
+            });
+
+            captureBtn.addEventListener('click', () => {
+                const context = captureCanvas.getContext('2d');
+                captureCanvas.width = cameraFeed.videoWidth;
+                captureCanvas.height = cameraFeed.videoHeight;
+                context.drawImage(cameraFeed, 0, 0, cameraFeed.videoWidth, cameraFeed.videoHeight);
+                
+                stopCameraStream();
+                cameraModal.classList.add('hidden');
+                
+                captureCanvas.toBlob(blob => {
+                    if (blob) {
+                        const file = new File([blob], "receipt-capture.jpg", { type: 'image/jpeg' });
+                        scanReceiptImage(file);
+                    }
+                }, 'image/jpeg');
+            });
+
             window.markExpenseAsPaid = markExpenseAsPaid;
             window.deleteExpense = deleteExpense;
             window.deleteNote = deleteNote;
             window.deleteBudget = deleteBudget;
+            
         })();
     </script>
 </body>
 </html>
+
